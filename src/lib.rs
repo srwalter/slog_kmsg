@@ -8,28 +8,25 @@ use std::io::Write as IoWrite;
 
 use slog::{Drain, Record, OwnedKVList};
 
-const BUFFER_SIZE : usize = 1024 - 32;
+const BUFFER_SIZE: usize = 1024 - 32;
 
-pub struct Kmsg
-{
+pub struct Kmsg {
     fd: RefCell<fs::File>,
     buffer: RefCell<[u8; BUFFER_SIZE]>,
 }
 
 impl Kmsg {
     pub fn new() -> Result<Kmsg, io::Error> {
-        let kmsg = fs::OpenOptions::new()
-            .write(true)
-            .open("/dev/kmsg")?;
+        let kmsg = fs::OpenOptions::new().write(true).open("/dev/kmsg")?;
 
         Ok(Kmsg {
-            fd: RefCell::new(kmsg),
-            buffer: RefCell::new([0; BUFFER_SIZE]),
-        })
+               fd: RefCell::new(kmsg),
+               buffer: RefCell::new([0; BUFFER_SIZE]),
+           })
     }
 }
 
-fn level_to_kern_level (l: slog::Level) -> u8 {
+fn level_to_kern_level(l: slog::Level) -> u8 {
     match l {
         slog::Level::Critical => 2,
         slog::Level::Error => 3,
@@ -40,8 +37,7 @@ fn level_to_kern_level (l: slog::Level) -> u8 {
     }
 }
 
-impl Drain for Kmsg
-{
+impl Drain for Kmsg {
     type Ok = ();
     type Err = io::Error;
 
@@ -50,10 +46,16 @@ impl Drain for Kmsg
             let mut buf = self.buffer.borrow_mut();
             let mut cursor = io::Cursor::new(&mut buf[..]);
             let klevel = level_to_kern_level(record.level());
-            write!(&mut cursor, "<{}>{}: {}", klevel, record.module(), record.msg())?;
+            write!(&mut cursor,
+                   "<{}>{}: {}",
+                   klevel,
+                   record.module(),
+                   record.msg())?;
             cursor.position() as usize
         };
-        self.fd.borrow_mut().write_all(&self.buffer.borrow()[..len])?;
+        self.fd
+            .borrow_mut()
+            .write_all(&self.buffer.borrow()[..len])?;
         Ok(())
     }
 }
