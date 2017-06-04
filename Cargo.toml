@@ -1,0 +1,7 @@
+[package]
+name = "slog_kmsg"
+version = "0.1.0"
+authors = ["Steven Walter <stevenrwalter@gmail.com>"]
+
+[dependencies]
+slog = "2.0"
