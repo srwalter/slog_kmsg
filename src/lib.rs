@@ -29,6 +29,17 @@ impl Kmsg {
     }
 }
 
+fn level_to_kern_level (l: slog::Level) -> u8 {
+    match l {
+        slog::Level::Critical => 2,
+        slog::Level::Error => 3,
+        slog::Level::Warning => 4,
+        slog::Level::Info => 6,
+        slog::Level::Debug => 7,
+        slog::Level::Trace => 7,
+    }
+}
+
 impl Drain for Kmsg
 {
     type Ok = ();
@@ -38,7 +49,8 @@ impl Drain for Kmsg
         let len = {
             let mut buf = self.buffer.borrow_mut();
             let mut cursor = io::Cursor::new(&mut buf[..]);
-            write!(&mut cursor, "{}", record.msg())?;
+            let klevel = level_to_kern_level(record.level());
+            write!(&mut cursor, "<{}>{}", klevel, record.msg())?;
             cursor.position() as usize
         };
         self.fd.borrow_mut().write_all(&self.buffer.borrow()[..len])?;
