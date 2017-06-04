@@ -5,3 +5,4 @@ authors = ["Steven Walter <stevenrwalter@gmail.com>"]
 
 [dependencies]
 slog = "2.0"
+slog-async = "2.0"
