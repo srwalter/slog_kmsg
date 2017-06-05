@@ -47,7 +47,7 @@ impl Drain for Kmsg {
             let mut cursor = io::Cursor::new(&mut buf[..]);
             let klevel = level_to_kern_level(record.level());
             write!(&mut cursor,
-                   "<{}>{}: {}",
+                   "<{}>{}: {}\n",
                    klevel,
                    record.module(),
                    record.msg())?;
@@ -56,6 +56,9 @@ impl Drain for Kmsg {
         self.fd
             .borrow_mut()
             .write_all(&self.buffer.borrow()[..len])?;
+        self.fd
+            .borrow_mut()
+            .flush()?;
         Ok(())
     }
 }
