@@ -8,7 +8,8 @@ use std::io::Write as IoWrite;
 
 use slog::{Drain, Record, OwnedKVList};
 
-const BUFFER_SIZE: usize = 1024 - 32;
+const KMSG_MAX: usize = 1024 - 32;
+const BUFFER_SIZE: usize = 4096;
 
 pub struct Kmsg {
     fd: RefCell<fs::File>,
@@ -42,7 +43,7 @@ impl Drain for Kmsg {
     type Err = io::Error;
 
     fn log(&self, record: &Record, values: &OwnedKVList) -> Result<Self::Ok, Self::Err> {
-        let len = {
+        let mut len = {
             let mut buf = self.buffer.borrow_mut();
             let mut cursor = io::Cursor::new(&mut buf[..]);
             let klevel = level_to_kern_level(record.level());
@@ -53,6 +54,9 @@ impl Drain for Kmsg {
                    record.msg())?;
             cursor.position() as usize
         };
+        if len > KMSG_MAX {
+            len = KMSG_MAX;
+        }
         self.fd
             .borrow_mut()
             .write_all(&self.buffer.borrow()[..len])?;
